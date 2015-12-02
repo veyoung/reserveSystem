@@ -1,0 +1,37 @@
+.page-header{
+padding-bottom: 9px;
+border-bottom: 1px solid #eee;
+margin: 0 0 15px 0;
+}
+body, button, input, select, textarea {
+  font-size: 14px;
+  font-family: "\5FAE\8F6F\96C5\9ED1",sans-serif,Arial,"\5b8b\4f53",sans-serif;
+}
+.table-title-blue td{
+background-color: #3498db;
+color: #fff;
+font-weight:bold;
+}
+.table-title-gray td{
+background-color: #ddd;
+color: #707070;
+font-weight:bold;
+}
+a{
+cursor:pointer;
+}
+.blue{
+color: #478fca!important;
+}
+.green{
+color: #4cae4c!important;
+}
+.orange{
+color: #ff892a!important;
+}
+.red{
+color: red!important;
+}
+.wid1{
+width:200px;
+}

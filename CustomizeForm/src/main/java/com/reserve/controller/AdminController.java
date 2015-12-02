@@ -47,6 +47,11 @@ public class AdminController extends BaseController{
 	
 	private final int EXPORT_BATCH_SIZE = 1000;
 	
+	@RequestMapping(value = "/go",  method = RequestMethod.GET)
+	@ResponseBody
+	public String adminList() {
+		return "go";
+	}
 	/**
 	 * 表单提交
 	 * @param reserveRecord

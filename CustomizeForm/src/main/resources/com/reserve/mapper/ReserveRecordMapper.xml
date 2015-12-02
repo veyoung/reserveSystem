@@ -108,7 +108,7 @@
 	</if>
   </select>
   
-   <select id="selectSelective" resultType="java.lang.Integer">
+   <select id="countSelectSelective" resultType="java.lang.Integer">
     select count(*)
     from reserve_record
     <where>
