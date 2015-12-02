@@ -2,7 +2,6 @@ package com.reserve.controller;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +17,7 @@ import javax.mail.internet.MimeMessage.RecipientType;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -32,7 +32,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.reserve.dto.ReserveQueryDto;
@@ -49,9 +48,15 @@ public class AdminController extends BaseController{
 	
 	@RequestMapping(value = "/go",  method = RequestMethod.GET)
 	@ResponseBody
-	public String adminList() {
+	public String go() {
 		return "go";
 	}
+	
+	@RequestMapping(value = "/form",  method = RequestMethod.GET)
+	public String form() {
+		return "form";
+	}
+	
 	/**
 	 * 表单提交
 	 * @param reserveRecord
@@ -62,21 +67,13 @@ public class AdminController extends BaseController{
 	@RequestMapping(value = "/form",  method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> reserve(
-			ReserveRecord reserveRecord,
+			ReserveRecord record,
 			HttpServletRequest request,
 			HttpServletResponse response) {
 		try {
-			ReserveRecord record = new ReserveRecord();
 			record.setId(IdGenerator.getInstance().nextId());
-			record.setName("young");
-			record.setIdNumber("342425199009230591");
-			record.setIdPhotoUrl("http://www.baidu.com");
-			record.setMobile("13817479353");
-			record.setReserveTime(new Date());
-			
 			reserveRecordMapper.insertSelective(record);
-			
-			
+			sendMail(record);
 			return success();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -84,86 +81,162 @@ public class AdminController extends BaseController{
 		}
 	}
 	
+	/**
+	 * 后台查询所有数据
+	 * @param reserveQueryDto
+	 * @param model
+	 * @param request
+	 * @param response
+	 * @param pageable
+	 * @return
+	 */
 	@RequestMapping(value = "/admin",  method = RequestMethod.GET)
 	public String adminList(
 			ReserveQueryDto reserveQueryDto,
 			Model model,
 			HttpServletRequest request,
 			HttpServletResponse response,
-			@PageableDefault(page=0, size=12, sort="create_time", direction = Sort.Direction.DESC) Pageable pageable) {
+			@PageableDefault(page=0, size=10, sort="create_time", direction = Sort.Direction.DESC) Pageable pageable) {
 		try {
-			Map<String, Object> param = new HashMap<String, Object>();
-			 List<ReserveRecord> reserveRecords = reserveRecordMapper.selectSelective(param);
-			 int total = reserveRecordMapper.countSelectSelective(param);
+			
+			Map<String, Object> param = createParam(reserveQueryDto);
+			List<ReserveRecord> reserveRecords = reserveRecordMapper.selectSelective(param);
+			int total = reserveRecordMapper.countSelectSelective(param);
 			 
-			 Page<?> page = new PageImpl<ReserveRecord>(reserveRecords, pageable, total);
-			 model.addAttribute("page", page);
-			 model.addAttribute("reserveQueryDto", reserveQueryDto);
-			 return "adminList";
+			Page<?> page = new PageImpl<ReserveRecord>(reserveRecords, pageable, total);
+			model.addAttribute("page", page);
+			model.addAttribute("reserveQueryDto", reserveQueryDto);
+			return "adminList";
 		} catch (Exception e) {
 			e.printStackTrace();
 			return "error";
 		}
 	}
 	
+	/**
+	 * 导出到excel中
+	 * @param reserveQueryDto
+	 * @param response
+	 * @throws IOException
+	 */
 	@RequestMapping(value = "/admin/export")
     public void exportOrderRecords(
-    		@RequestParam(required=false) Long suiteId,
-    		@RequestParam(required=false) String userName,
-    		@RequestParam(required=false) String contactName,
-    		@RequestParam(required=false) String contactPhone,
-    		@RequestParam(required=false) Integer status,
-    		@RequestParam(required=false) Long universalId,
-    		@RequestParam(required=false) String beginDate,
-    		@RequestParam(required=false) String endDate,
-    		@RequestParam(required=false) String orders,
-    		@RequestParam(required=false) String invoices,
+    		ReserveQueryDto reserveQueryDto,
     		HttpServletResponse response) throws IOException {
         
         OutputStream out = response.getOutputStream();
-    	response.setHeader("Content-Disposition", "attachment; filename=\"" + "orderRecord.xls\"");
-    	//orderService.exportOrderRecords(dto, out);
+    	response.setHeader("Content-Disposition", "attachment; filename=\"" + "data.xls\"");
+    	exportReserveRecords(reserveQueryDto, out);
         out.flush();
     }
+
+	/**
+	 * 构造参数
+	 * @param reserveQueryDto
+	 * @return
+	 */
+	private Map<String, Object> createParam(ReserveQueryDto reserveQueryDto) {
+		Map<String, Object> param = new HashMap<String, Object>();
+		if (StringUtils.isNotBlank(reserveQueryDto.getQueryName())) {
+			param.put("name", reserveQueryDto.getQueryName());
+		}
+		if (StringUtils.isNotBlank(reserveQueryDto.getQueryMobile())) {
+			param.put("mobile", reserveQueryDto.getQueryMobile());
+		}
+		param.put("startTime", reserveQueryDto.getQueryStartTime());
+		param.put("endTime", reserveQueryDto.getQueryEndTime());
+		return param;
+	}
+	
+	/**
+	 * 发送邮件提醒
+	 * @param record
+	 */
+	public void sendMail(ReserveRecord record) {
+		final Properties props = new Properties();
+        /*
+         * 可用的属性： mail.store.protocol / mail.transport.protocol / mail.host /
+         * mail.user / mail.from
+         */
+        // 表示SMTP发送邮件，需要进行身份验证
+        props.put("mail.smtp.auth", "true");
+        props.put("mail.smtp.host", "smtp.163.com");
+         
+        // 发件人的账号
+        props.put("mail.user", "qrqyy@163.com");
+        // 访问SMTP服务时需要提供的密码
+        props.put("mail.password", "qrqyy20082451");
+ 
+        try {
+        	// 构建授权信息，用于进行SMTP进行身份验证
+            Authenticator authenticator = new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    // 用户名、密码
+                    String userName = props.getProperty("mail.user");
+                    String password = props.getProperty("mail.password");
+                    return new PasswordAuthentication(userName, password);
+                }
+            };
+             
+            // 使用环境属性和授权信息，创建邮件会话
+            Session mailSession = Session.getInstance(props, authenticator);
+            // 创建邮件消息
+            MimeMessage message = new MimeMessage(mailSession);
+            // 设置发件人
+            InternetAddress form = new InternetAddress(
+                    props.getProperty("mail.user"));
+            message.setFrom(form);
+     
+            // 设置收件人
+            InternetAddress to = new InternetAddress("642479980@qq.com");
+            message.setRecipient(RecipientType.TO, to);
+     
+            // 设置抄送
+            InternetAddress cc = new InternetAddress("760518799@qq.com");
+            message.setRecipient(RecipientType.CC, cc);
+     
+            // 设置邮件标题
+            String title = "姓名:" + record.getName() + "-电话:"+record.getMobile()+"预约提醒";
+            message.setSubject(title);
+     
+            // 设置邮件的内容体
+            String content = "\"刘明亮劳模工作室 预约登记表\"有新数据，请登录后台处理。<br>姓名:"+record.getName()
+            		+ "<br>手机："  + record.getMobile()
+            		+ "<br>身份证号码：" + record.getMobile() 
+            		+ "<br>预约时间：" + record.getReserveTime()
+            		+ "<br>情况说明：" + record.getDescription();
+            message.setContent(content, "text/html;charset=UTF-8");
+            
+            // 发送邮件
+        	Transport.send(message);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 	
 	/**
 	 * 导出excel
 	 * @return
 	 */
-	public void exportOrderRecords(OutputStream out) throws IOException{
+	public void exportReserveRecords(ReserveQueryDto reserveQueryDto, OutputStream out) throws IOException{
 		long begin = System.currentTimeMillis();
         int cell = 0;
-        Workbook  wb = new HSSFWorkbook();
+        Workbook wb = new HSSFWorkbook();
         Sheet sheet = wb.createSheet("new sheet");
         Row row = sheet.createRow((short)0);
-        row.createCell(cell++).setCellValue("No");
-        row.createCell(cell++).setCellValue("订单号");
-        row.createCell(cell++).setCellValue("购买用户ID");
-        row.createCell(cell++).setCellValue("售卖渠道");
-        row.createCell(cell++).setCellValue("商品ID");
-        row.createCell(cell++).setCellValue("商品名称");
-        row.createCell(cell++).setCellValue("订单总价");
-        row.createCell(cell++).setCellValue("订单现价");
-        row.createCell(cell++).setCellValue("优惠金额");
-        row.createCell(cell++).setCellValue("成交价");
-        row.createCell(cell++).setCellValue("支付类型");
-        row.createCell(cell++).setCellValue("订单状态");
-        row.createCell(cell++).setCellValue("appKey");
-        row.createCell(cell++).setCellValue("支付ID");
-        row.createCell(cell++).setCellValue("支付平台");
-        row.createCell(cell++).setCellValue("支付时间");
-        row.createCell(cell++).setCellValue("快递单号");
-        row.createCell(cell++).setCellValue("快递方式");
-        row.createCell(cell++).setCellValue("收货人");
-        row.createCell(cell++).setCellValue("联系电话");
-        row.createCell(cell++).setCellValue("是否收款");
-        row.createCell(cell++).setCellValue("是否开发票");
-        row.createCell(cell++).setCellValue("订单授权生效时间");
-        row.createCell(cell++).setCellValue("订单来源");
-        row.createCell(cell++).setCellValue("买家留言");
-        row.createCell(cell++).setCellValue("所属分支");
-        row.createCell(cell++).setCellValue("CRM ID");
-        row.createCell(cell++).setCellValue("创建时间");
+        row.createCell(cell++).setCellValue("序号");
+        row.createCell(cell++).setCellValue("姓名");
+        row.createCell(cell++).setCellValue("手机号");
+        row.createCell(cell++).setCellValue("身份证号码");
+        row.createCell(cell++).setCellValue("预约时间");
+        row.createCell(cell++).setCellValue("情况说明");
+        row.createCell(cell++).setCellValue("提交时间");
+        
+        Map<String, Object> param = createParam(reserveQueryDto);
+        List<ReserveRecord> reserveRecords = reserveRecordMapper.selectSelective(param);
+		int total = reserveRecordMapper.countSelectSelective(param);
+		
 //        Map<String, Object> param = addParam(dto,  null);
 //        Integer total = orderRecordMapper.countOrdersSelective(param);
 //        int rowIndex = 0;
@@ -287,62 +360,4 @@ public class AdminController extends BaseController{
 //            }
         wb.write(out);
     }
-	
-	public void sendMail() {
-		final Properties props = new Properties();
-        /*
-         * 可用的属性： mail.store.protocol / mail.transport.protocol / mail.host /
-         * mail.user / mail.from
-         */
-        // 表示SMTP发送邮件，需要进行身份验证
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.host", "smtp.163.com");
-         
-        // 发件人的账号
-        props.put("mail.user", "qrqyy@163.com");
-        // 访问SMTP服务时需要提供的密码
-        props.put("mail.password", "qrqyy20082451");
- 
-        try {
-        	// 构建授权信息，用于进行SMTP进行身份验证
-            Authenticator authenticator = new Authenticator() {
-                @Override
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    // 用户名、密码
-                    String userName = props.getProperty("mail.user");
-                    String password = props.getProperty("mail.password");
-                    return new PasswordAuthentication(userName, password);
-                }
-            };
-             
-            // 使用环境属性和授权信息，创建邮件会话
-            Session mailSession = Session.getInstance(props, authenticator);
-            // 创建邮件消息
-            MimeMessage message = new MimeMessage(mailSession);
-            // 设置发件人
-            InternetAddress form = new InternetAddress(
-                    props.getProperty("mail.user"));
-            message.setFrom(form);
-     
-            // 设置收件人
-            InternetAddress to = new InternetAddress("642479980@qq.com");
-            message.setRecipient(RecipientType.TO, to);
-     
-            // 设置抄送
-            InternetAddress cc = new InternetAddress("760518799@qq.com");
-            message.setRecipient(RecipientType.CC, cc);
-     
-            // 设置邮件标题
-            message.setSubject("测试邮件");
-     
-            // 设置邮件的内容体
-            message.setContent("hello world", "text/html;charset=UTF-8");
-            
-            // 发送邮件
-        	Transport.send(message);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 }

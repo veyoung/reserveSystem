@@ -27,28 +27,54 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 <div class="wrapper">
 	<div class="admin-wrapper">
 		<h4 class="header">
-			<b>分销商列表</b>
-			<div class="pull-right action-group">               
-				<button class="btn btn-success" data-toggle="modal" data-target="#myModal">
-  					<i class="ace-icon fa fa-plus-circle"></i>添加分销商
-				</button>                     
-			</div>
+			<b>后台查询</b>
 		</h4>
+		<form id="searchForm" class="form-horizontal" role="form" action="admin" method="get">
+         <div class="form-group">
+		    <label class="col-sm-2 control-label">姓名</label>
+		    <div class="col-sm-3">
+				<input name="queryName" type="text" class="form-control">
+		    </div>
+		 </div> 
+		 <div class="form-group">
+		    <label class="col-sm-2 control-label">手机号</label>
+		    <div class="col-sm-3">
+				<input name="queryMobile" type="text" class="form-control">
+		    </div>
+		 </div>
+		 <div class="form-group">
+		    <label class="col-sm-2 control-label">时间范围</label>
+		    <div class="col-sm-3">
+				<input id="queryStartTime" name="queryStartTime" type="text" class="form-control">
+				<input id="queryEndTime" name="queryEndTime" type="text" class="form-control">
+		    </div>
+		 </div>
+		 
+		 <div class="form-group">
+		    <div class="col-sm-offset-2">
+		    	<button type="submit" class="btn btn-primary btn-primary">查询&nbsp;&nbsp;<i class="glyphicon glyphicon-search"></i></button>
+		    	<button id="export" class="btn btn-primary btn-success">导出excel</button>
+		    </div>
+		 </div> 
+    	</form>
 		
 		<table class="table table-striped table-hover">
-			<tr class="table-title-blue"><td width="10%" class="distributor-font">分销商姓名</td><td width="15%">ID</td><td width="20%">等级</td><td width="15%">所属会员</td><td width="20%">下属会员</td><td width="20%">操作</td></tr>
-			<tr><td class="distributor-font">&nbsp;余扬</td><td>56235123</td><td>钻石会员</td><td>李斯</td><td><a href="distributorsubmember.html">查看</a></td>
-				<td>
-					<a class="blue" href="distributoredit.html"><i class="ace-icon fa fa-pencil"></i>编辑&nbsp;&nbsp;</a>
-					<a class="orange"><i class="ace-icon fa fa-pencil"></i>删除</a>
-				</td>
+			<tr class="table-title-blue">
+				<td width="10%">序号</td>
+				<td width="10%">姓名</td>
+				<td width="15%">手机号</td>
+				<td width="25%">身份证号</td>
+				<td width="25%">预约时间</td>
 			</tr>
-			<tr><td class="distributor-font">&nbsp;余扬</td><td>56235123</td><td>钻石会员</td><td>李斯</td><td><a href="distributorsubmember.html">查看</a></td>
-				<td>
-					<a class="blue" href="distributoredit.html"><i class="ace-icon fa fa-pencil"></i>编辑&nbsp;&nbsp;</a>
-					<a class="orange"><i class="ace-icon fa fa-pencil"></i>删除</a>
-				</td>
-			</tr>			
+			<c:forEach var="item" items="${page.content}" varStatus="status">
+				<tr>
+					<td>${status.index+1}</td>
+					<td>${item.name}</td>
+					<td>${item.mobile}</td>
+					<td>${item.idNumber}</td>
+					<td>${item.reserveTime}</td>
+				</tr>
+			</c:forEach>
 		</table>
 		<div style="float:right">
 			<ul class="pagination">
@@ -64,5 +90,17 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 </div>
 <script src="js/jquery-1.9.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
+<script src="js/bootstrap-datepicker.js"></script>
+<script type="text/javascript">
+$(function(){
+	$('#queryStartTime').datepicker();
+	$('#queryEndTime').datepicker();
+	
+	$('#export').on('click',function(){
+		
+		return false;
+	})
+})
+</script>
 </body>
 </html>

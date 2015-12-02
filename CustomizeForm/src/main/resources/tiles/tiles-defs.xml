@@ -2,11 +2,11 @@
         "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
         "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
 <tiles-definitions>
-
-    <definition name="index" template="/WEB-INF/pages/index.jsp">
+    
+    <definition name="adminList" template="/pages/adminList.jsp">
     </definition>
     
-    <definition name="adminList" template="/WEB-INF/pages/adminList.jsp">
+    <definition name="form" template="/pages/form.jsp">
     </definition>
 
 </tiles-definitions>

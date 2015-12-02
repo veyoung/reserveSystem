@@ -99,6 +99,9 @@
     	<if test="endTime != null">
     		and create_time &lt; #{endTime,jdbcType=TIMESTAMP}
     	</if>
+    	<if test="name != null">
+    		and name = #{name,jdbcType=VARCHAR}
+    	</if>
     	<if test="mobile != null">
     		and mobile = #{mobile,jdbcType=VARCHAR}
     	</if>
@@ -117,6 +120,9 @@
     	</if>
     	<if test="endTime != null">
     		and create_time &lt; #{endTime,jdbcType=TIMESTAMP}
+    	</if>
+    	<if test="name != null">
+    		and name = #{name,jdbcType=VARCHAR}
     	</if>
     	<if test="mobile != null">
     		and mobile = #{mobile,jdbcType=VARCHAR}
