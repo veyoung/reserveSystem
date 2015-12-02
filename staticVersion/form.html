@@ -23,7 +23,6 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 	<div class="form-wrapper">
 		<div class="header"></div>
 		<div class="front">
-			<h3>刘明亮劳模工作室 预约登记表</h3>
 			<p>请认真正确的填写您的预约信息和联系方式，以方便我们与您联系。我们的工作时间是9:00--18:00，请在工作时间内预约，方便我们更好的为您提供服务。</p>
 		</div>
 
@@ -32,12 +31,21 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 			<label for="name" class="col-sm-3 control-label"><span class="require">*</span>姓名</label>
 			<div class="col-sm-8">
 			  <input type="text" name="name" class="form-control" id="name">
+			  <div class="alert alert-danger help-block">
+                    姓名不能为空
+              </div>
 			</div>
 		  </div>
 		  <div class="form-group">
 			<label for="mobile" class="col-sm-3 control-label"><span class="require">*</span>手机号</label>
 			<div class="col-sm-8">
 			  <input type="text" name="mobile" class="form-control" id="mobile">
+			  <div class="alert alert-danger help-block">
+                    手机号不能为空
+              </div>
+			  <div class="alert alert-danger help-block">
+                    手机号格式不正确
+              </div>			  
 			</div>
 		  </div>
 		  <div class="form-group">
@@ -56,6 +64,9 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 			<label for="reserveTime" class="col-sm-3 control-label"><span class="require">*</span>预约时间</label>
 			<div class="col-sm-8">
 			  <input type="text" class="form-control" id="reserveTime">
+			  <div class="alert alert-danger help-block">
+                    预约时间不能为空
+              </div>
 			</div>
 		  </div>
 		  <div class="form-group">
@@ -75,6 +86,8 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 </div>
 
 <script src="js/jquery-1.9.1.min.js"></script>
+<script src="js/angular.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
+<script src="js/form.js"></script>
 </body>
 </html>
