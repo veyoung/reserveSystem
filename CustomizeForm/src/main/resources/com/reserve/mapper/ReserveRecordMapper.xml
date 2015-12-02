@@ -89,4 +89,41 @@
       </if>
     </trim>
   </insert>
+  <select id="selectSelective" resultMap="BaseResultMap">
+    select *
+    from reserve_record
+    <where>
+    	<if test="startTime != null">
+    		and create_time &gt; #{startTime,jdbcType=TIMESTAMP}
+    	</if>
+    	<if test="endTime != null">
+    		and create_time &lt; #{endTime,jdbcType=TIMESTAMP}
+    	</if>
+    	<if test="mobile != null">
+    		and mobile = #{mobile,jdbcType=VARCHAR}
+    	</if>
+    </where>
+    <if test="pageSize != null">
+		limit #{offset,jdbcType=INTEGER}, #{pageSize,jdbcType=INTEGER}
+	</if>
+  </select>
+  
+   <select id="selectSelective" resultType="java.lang.Integer">
+    select count(*)
+    from reserve_record
+    <where>
+    	<if test="startTime != null">
+    		and create_time &gt; #{startTime,jdbcType=TIMESTAMP}
+    	</if>
+    	<if test="endTime != null">
+    		and create_time &lt; #{endTime,jdbcType=TIMESTAMP}
+    	</if>
+    	<if test="mobile != null">
+    		and mobile = #{mobile,jdbcType=VARCHAR}
+    	</if>
+    </where>
+    <if test="pageSize != null">
+		limit #{offset,jdbcType=INTEGER}, #{pageSize,jdbcType=INTEGER}
+	</if>
+  </select>
 </mapper>

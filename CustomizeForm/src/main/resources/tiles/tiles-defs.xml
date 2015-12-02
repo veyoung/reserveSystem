@@ -5,5 +5,8 @@
 
     <definition name="index" template="/WEB-INF/pages/index.jsp">
     </definition>
+    
+    <definition name="adminList" template="/WEB-INF/pages/adminList.jsp">
+    </definition>
 
 </tiles-definitions>

@@ -1,5 +1,8 @@
 package com.reserve.mapper;
 
+import java.util.List;
+import java.util.Map;
+
 import com.reserve.model.ReserveRecord;
 
 public interface ReserveRecordMapper {
@@ -18,4 +21,8 @@ public interface ReserveRecordMapper {
      * @mbggenerated Wed Dec 02 10:13:11 CST 2015
      */
     int insertSelective(ReserveRecord record);
+    
+    List<ReserveRecord> selectSelective(Map<String, Object> param);
+    
+    int countSelectSelective(Map<String, Object> param);
 }
