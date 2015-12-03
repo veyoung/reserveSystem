@@ -30,10 +30,11 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 	<div class="form-wrapper">
 		<div class="header"></div>
 		<div class="front">
+			<h3><b>刘明亮劳模工作室 预约登记表</b></h3>
 			<p>请认真正确的填写您的预约信息和联系方式，以方便我们与您联系。我们的工作时间是9:00--18:00，请在工作时间内预约，方便我们更好的为您提供服务。</p>
 		</div>
 
-		<form name="myForm" class="form-horizontal" action="form" method="post">
+		<form name="myForm" class="form-horizontal" action="form" method="post" enctype="multipart/form-data">
 		  <div class="form-group"> 
 			<label for="name" class="col-sm-3 control-label"><span class="require">*</span>姓名</label>
 			<div class="col-sm-8">
@@ -58,7 +59,7 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 		  <div class="form-group">
 			<label for="upload" class="col-sm-3 control-label">请上传身份证</label>
 			<div class="col-sm-8">
-			  <input type="file" class="form-control" id="upload">
+			  <input type="file" name="file" class="form-control" id="upload">
 			</div>
 		  </div>
 		  <div class="form-group">

@@ -2,6 +2,7 @@ package com.reserve.controller;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,9 +31,12 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.reserve.dto.ReserveQueryDto;
 import com.reserve.mapper.ReserveRecordMapper;
@@ -45,6 +49,7 @@ public class AdminController extends BaseController{
 	ReserveRecordMapper reserveRecordMapper;
 	
 	private final int EXPORT_BATCH_SIZE = 1000;
+	private final int PAGE_SIZE = 10;
 	
 	@RequestMapping(value = "/go",  method = RequestMethod.GET)
 	@ResponseBody
@@ -67,17 +72,79 @@ public class AdminController extends BaseController{
 	@RequestMapping(value = "/form",  method = RequestMethod.POST)
 	@ResponseBody
 	public Map<String, Object> reserve(
-			ReserveRecord record,
+			@RequestParam(value="name",required = true) String name,
+			@RequestParam(value="mobile",required = true) String mobile,
+			@RequestParam(value="idNumber",required = false) String idNumber,
+			@RequestParam(value="reserveTime",required = true) Date reserveTime,
+			@RequestParam(value="description",required = true) String description,
+			@RequestParam(value="file",required = false) MultipartFile file,
 			HttpServletRequest request,
 			HttpServletResponse response) {
 		try {
+			ReserveRecord record = new ReserveRecord();
 			record.setId(IdGenerator.getInstance().nextId());
+			record.setName(name);
+			record.setMobile(mobile);
+			record.setIdNumber(idNumber);
+			record.setDescription(description);
+			record.setReserveTime(reserveTime);
+			record.setCreateTime(new Date());
+			if (file != null) {
+				record.setIdPhoto(file.getBytes());
+			}
 			reserveRecordMapper.insertSelective(record);
-			sendMail(record);
+			//sendMail(record);
 			return success();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return fail();
+		}
+	}
+	
+	/**
+	 * 获取记录
+	 * @param id
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping(value = "/record/{id}",  method = RequestMethod.GET)
+	@ResponseBody
+	public Map<String, Object> reserveById(
+			@PathVariable("id") Long id,
+			HttpServletRequest request,
+			HttpServletResponse response) {
+		try {
+			ReserveRecord reserveRecord = reserveRecordMapper.selectByPrimaryKey(id);
+			return success(reserveRecord);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return fail();
+		}
+	}
+	
+	/**
+	 * 照片
+	 * @param id
+	 * @param request
+	 * @param response
+	 */
+	@RequestMapping(value = "/photo/{id}",  method = RequestMethod.GET)
+	public void reservePhotoById(
+			@PathVariable("id") Long id,
+			HttpServletRequest request,
+			HttpServletResponse response) {
+		try {
+			ReserveRecord reserveRecord = reserveRecordMapper.selectByPrimaryKey(id);
+			response.setHeader("Content-Type","image/jpeg");//设置响应的媒体类型，这样浏览器会识别出响应的是图片
+			if (reserveRecord.getIdPhoto() != null){
+				OutputStream out = response.getOutputStream();
+				out.write(reserveRecord.getIdPhoto());
+				out.flush();
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -90,21 +157,21 @@ public class AdminController extends BaseController{
 	 * @param pageable
 	 * @return
 	 */
-	@RequestMapping(value = "/admin",  method = RequestMethod.GET)
+	@RequestMapping(value = "/admin/{page}", method = RequestMethod.GET)
 	public String adminList(
 			ReserveQueryDto reserveQueryDto,
 			Model model,
 			HttpServletRequest request,
 			HttpServletResponse response,
-			@PageableDefault(page=0, size=10, sort="create_time", direction = Sort.Direction.DESC) Pageable pageable) {
-		try {
+			@PathVariable("page") Integer page) {
+		try { 
 			
-			Map<String, Object> param = createParam(reserveQueryDto);
+			Map<String, Object> param = createParam(reserveQueryDto,page);
 			List<ReserveRecord> reserveRecords = reserveRecordMapper.selectSelective(param);
 			int total = reserveRecordMapper.countSelectSelective(param);
 			 
-			Page<?> page = new PageImpl<ReserveRecord>(reserveRecords, pageable, total);
-			model.addAttribute("page", page);
+			model.addAttribute("reserveRecords", reserveRecords);
+			model.addAttribute("total", total);
 			model.addAttribute("reserveQueryDto", reserveQueryDto);
 			return "adminList";
 		} catch (Exception e) {
@@ -119,7 +186,7 @@ public class AdminController extends BaseController{
 	 * @param response
 	 * @throws IOException
 	 */
-	@RequestMapping(value = "/admin/export")
+	@RequestMapping(value = "/admin/export", method = RequestMethod.POST)
     public void exportOrderRecords(
     		ReserveQueryDto reserveQueryDto,
     		HttpServletResponse response) throws IOException {
@@ -135,7 +202,7 @@ public class AdminController extends BaseController{
 	 * @param reserveQueryDto
 	 * @return
 	 */
-	private Map<String, Object> createParam(ReserveQueryDto reserveQueryDto) {
+	private Map<String, Object> createParam(ReserveQueryDto reserveQueryDto, Integer page) {
 		Map<String, Object> param = new HashMap<String, Object>();
 		if (StringUtils.isNotBlank(reserveQueryDto.getQueryName())) {
 			param.put("name", reserveQueryDto.getQueryName());
@@ -145,6 +212,10 @@ public class AdminController extends BaseController{
 		}
 		param.put("startTime", reserveQueryDto.getQueryStartTime());
 		param.put("endTime", reserveQueryDto.getQueryEndTime());
+		if (page != null) {
+			param.put("offset", page * PAGE_SIZE);
+			param.put("pageSize", PAGE_SIZE);
+		}
 		return param;
 	}
 	
@@ -220,7 +291,6 @@ public class AdminController extends BaseController{
 	 * @return
 	 */
 	public void exportReserveRecords(ReserveQueryDto reserveQueryDto, OutputStream out) throws IOException{
-		long begin = System.currentTimeMillis();
         int cell = 0;
         Workbook wb = new HSSFWorkbook();
         Sheet sheet = wb.createSheet("new sheet");
@@ -233,9 +303,24 @@ public class AdminController extends BaseController{
         row.createCell(cell++).setCellValue("情况说明");
         row.createCell(cell++).setCellValue("提交时间");
         
-        Map<String, Object> param = createParam(reserveQueryDto);
+        Map<String, Object> param = createParam(reserveQueryDto,null);
         List<ReserveRecord> reserveRecords = reserveRecordMapper.selectSelective(param);
 		int total = reserveRecordMapper.countSelectSelective(param);
+		int rowIndex = 0;
+		for(int j = 0; j < reserveRecords.size(); j++) {
+        	cell = 0;
+        	ReserveRecord reserveRecord = reserveRecords.get(j);
+        	if(reserveRecord != null){
+        		row = sheet.createRow(++rowIndex);
+                row.createCell(cell++).setCellValue(rowIndex);
+                row.createCell(cell++).setCellValue(reserveRecord.getName());
+                row.createCell(cell++).setCellValue(reserveRecord.getMobile());
+                row.createCell(cell++).setCellValue(reserveRecord.getIdNumber());
+                row.createCell(cell++).setCellValue(reserveRecord.getReserveTimeStr());
+                row.createCell(cell++).setCellValue(reserveRecord.getDescription());
+                row.createCell(cell++).setCellValue(reserveRecord.getCreateTimeStr());
+        	}  
+        }
 		
 //        Map<String, Object> param = addParam(dto,  null);
 //        Integer total = orderRecordMapper.countOrdersSelective(param);
@@ -252,109 +337,6 @@ public class AdminController extends BaseController{
 //                    row.createCell(cell++).setCellValue(rowIndex);
 //                    row.createCell(cell++).setCellValue(orderRecord.getId() != null ? orderRecord.getId().toString() : "");
 //                    row.createCell(cell++).setCellValue(orderRecord.getUserId() == null ? "" : orderRecord.getUserId().toString());
-//                    if(Objects.equal(orderRecord.getChannelId(), '1')){
-//                    	row.createCell(cell++).setCellValue("购买");
-//                    }else if(Objects.equal(orderRecord.getChannelId(), '2')){
-//                    	row.createCell(cell++).setCellValue("邀请码");
-//                    }else if(Objects.equal(orderRecord.getChannelId(), '3')){
-//                    	row.createCell(cell++).setCellValue("申请试用");
-//                    }else if(Objects.equal(orderRecord.getChannelId(), '4')){
-//                    	row.createCell(cell++).setCellValue("预授权");
-//                    }else if(Objects.equal(orderRecord.getChannelId(), '5')){
-//                    	row.createCell(cell++).setCellValue("应用内购买");                	
-//                    }else{
-//                    	row.createCell(cell++).setCellValue(""); 
-//                    }
-//                    if(orderRecord.getItems() != null){
-//                    	String suiteName = "";
-//                    	String suiteId = "";
-//                    	for(OrderItem orderItem : orderRecord.getItems()){
-//                    		if(orderItem.getSuiteName() != null){
-//                    			suiteName = suiteName + " " + orderItem.getSuiteName();
-//                    		}
-//                    		if(orderItem.getSuiteId() != null){
-//                    			suiteId = suiteId + " " + orderItem.getSuiteId();
-//                    		}
-//                    	}
-//                    	row.createCell(cell++).setCellValue(suiteId);  
-//                    	row.createCell(cell++).setCellValue(suiteName); 
-//                    }else{
-//                    	row.createCell(cell++).setCellValue("");  
-//                    	row.createCell(cell++).setCellValue("");
-//                    }
-//                    row.createCell(cell++).setCellValue(orderRecord.getOriginalPrice()  == null ? 0 : orderRecord.getOriginalPrice().doubleValue()/100);
-//                    row.createCell(cell++).setCellValue(orderRecord.getPresentPrice() == null ? 0 : orderRecord.getPresentPrice().doubleValue()/100);
-//                    row.createCell(cell++).setCellValue(orderRecord.getDiscountPrice() == null ? 0 : orderRecord.getDiscountPrice().doubleValue()/100);
-//                    //row.createCell(cell++).setCellValue(orderRecord.getDiscountCode() == null ? "" : orderRecord.getDiscountCode());
-//                    row.createCell(cell++).setCellValue(orderRecord.getDealPrice() == null ? 0 : orderRecord.getDealPrice().doubleValue()/100);
-//                    if(Objects.equal(orderRecord.getPayType(), 1)){
-//                    	row.createCell(cell++).setCellValue("在线支付");
-//                    }else if(Objects.equal(orderRecord.getPayType(), 2)){
-//                    	row.createCell(cell++).setCellValue("货到付款"); 
-//                    }else if(Objects.equal(orderRecord.getPayType(), 3)){
-//                    	row.createCell(cell++).setCellValue("公司转账"); 
-//                    }else{
-//                    	row.createCell(cell++).setCellValue(""); 
-//                    }
-//                    if(Objects.equal(orderRecord.getStatus(), OrderRecord.STATUS_PAYING)){
-//                    	row.createCell(cell++).setCellValue("在线支付 待支付");                	
-//                    }else if(Objects.equal(orderRecord.getStatus(), OrderRecord.STATUS_PAYED)){
-//                    	row.createCell(cell++).setCellValue("在线支付 已支付");                	
-//                    }else if(Objects.equal(orderRecord.getStatus(), OrderRecord.STATUS_NEW_ON_DELIVERY)){
-//                    	row.createCell(cell++).setCellValue("货到付款 待付款");                	
-//                    }else if(Objects.equal(orderRecord.getStatus(), OrderRecord.STATUS_COMPLETED_ON_DELIVERY)){
-//                    	row.createCell(cell++).setCellValue("货到付款 已付款");                	
-//                    }else if(Objects.equal(orderRecord.getStatus(), OrderRecord.STATUS_TRANSFERING)){
-//                    	row.createCell(cell++).setCellValue("公司转账  待转账");                	
-//                    }else if(Objects.equal(orderRecord.getStatus(), OrderRecord.STATUS_CONFIRMED_ON_TRANSFER)){
-//                    	row.createCell(cell++).setCellValue("公司转账  已转账");                	
-//                    }else if(Objects.equal(orderRecord.getStatus(), OrderRecord.STATUS_SYSTEM_CONFIRMED_ON_TRANSFER)){
-//                    	row.createCell(cell++).setCellValue("公司转账  已转账");                	
-//                    }else if(Objects.equal(orderRecord.getStatus(), OrderRecord.STATUS_CANCEL)){
-//                    	row.createCell(cell++).setCellValue("取消");                	
-//                    }else{
-//                    	row.createCell(cell++).setCellValue(""); 
-//                    }
-//                    row.createCell(cell++).setCellValue(orderRecord.getAppKey() == null ? "" : orderRecord.getAppKey());
-//                    row.createCell(cell++).setCellValue(orderRecord.getPayId() == null ? "" : orderRecord.getPayId().toString());
-//                    if(Objects.equal(orderRecord.getPayProvider(), 1) || Objects.equal(orderRecord.getPayProvider(), 40000)) {
-//                    	row.createCell(cell++).setCellValue("财付通");
-//                    }else if(Objects.equal(orderRecord.getPayProvider(), 2) || Objects.equal(orderRecord.getPayProvider(), 30000)) {
-//                    	row.createCell(cell++).setCellValue("快钱");
-//                    }else  if(Objects.equal(orderRecord.getPayProvider(), 3) || Objects.equal(orderRecord.getPayProvider(), 50000)) {
-//                    	row.createCell(cell++).setCellValue("支付宝");
-//                    }else if(Objects.equal(orderRecord.getPayProvider(), 4) || Objects.equal(orderRecord.getPayProvider(), 60000)) {
-//                    	row.createCell(cell++).setCellValue("微信支付");
-//                    }else {
-//                    	row.createCell(cell++).setCellValue("");
-//                    }
-//                    row.createCell(cell++).setCellValue(orderRecord.getPayTime() != null ? longFormat.format(orderRecord.getPayTime()) : "");
-//                    row.createCell(cell++).setCellValue(orderRecord.getExpressId() == null ? "" : orderRecord.getExpressId());
-//                    row.createCell(cell++).setCellValue(orderRecord.getExpressChannel() == null ? "" : orderRecord.getExpressChannel());
-//                    row.createCell(cell++).setCellValue(orderRecord.getContactName() == null ? "" : orderRecord.getContactName());
-//                    row.createCell(cell++).setCellValue(orderRecord.getContactPhone() == null ? "" : orderRecord.getContactPhone());
-//                    row.createCell(cell++).setCellValue(orderRecord.getChargeable() == null ? "" : orderRecord.getChargeable().toString());
-//                    row.createCell(cell++).setCellValue(orderRecord.getInvoiceEnable() == null ? "" : orderRecord.getInvoiceEnable().toString());
-//                    row.createCell(cell++).setCellValue(orderRecord.getEffectiveDate() != null ? longFormat.format(orderRecord.getEffectiveDate()) : "");
-//                    row.createCell(cell++).setCellValue(orderRecord.getSource() == null ?  "" : orderRecord.getSource());
-//                    row.createCell(cell++).setCellValue(orderRecord.getRemark() == null ?  "" : orderRecord.getRemark());
-//                    if(orderRecord.getItems() != null){
-//                    	String branchName = "";
-//                    	String crmId = "";
-//                    	for(OrderItem orderItem : orderRecord.getItems()){
-//                    		if(orderItem.getBranchName() != null){
-//                    			branchName = branchName + " " + orderItem.getSuiteName();
-//                    		}
-//                    		if(orderItem.getCrmId() != null){
-//                    			crmId = crmId + " " + orderItem.getSuiteId();
-//                    		}
-//                    	}
-//                    	row.createCell(cell++).setCellValue(branchName);  
-//                    	row.createCell(cell++).setCellValue(crmId); 
-//                    }else{
-//                    	row.createCell(cell++).setCellValue("");  
-//                    	row.createCell(cell++).setCellValue("");
-//                    }
 //                    row.createCell(cell++).setCellValue(orderRecord.getCreateTime() != null ? longFormat.format(orderRecord.getCreateTime()) : "");
 //            	}  
 //            }
