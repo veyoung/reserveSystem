@@ -31,25 +31,49 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 		<h4 class="header">
 			<b>后台查询</b>
 		</h4>
-		<form id="searchForm" class="form-horizontal" role="form">
+		<form class="form-inline">
+		  <input type="hidden" id="page" name="page"/>
+          <input type="hidden" name="totalPages" value="${page.totalPages}">
+	      <input type="hidden" name="currentPage" value="${page.number}">
+		  <div class="form-group">
+		    <label>姓名</label>
+		    <input type="text" class="form-control" style="width:80px;">
+		  </div>
+		  <div class="form-group">
+		    <label>手机号</label>
+		    <input type="text" class="form-control" style="width:120px;">
+		  </div>
+		  <div class="form-group">
+		  	<label>时间范围</label>
+			<input name="query" type="text" class="form-control">
+			<input name="query" type="text" class="form-control">
+		  </div>  
+		  <button type="submit" id="btn-query" class="btn btn-primary btn-primary">查询&nbsp;&nbsp;<i class="glyphicon glyphicon-search"></i></button>
+		  <button type="submit" id="btn-export" class="btn btn-primary btn-success">导出excel</button>
+		</form>
+	  
+	  	<!--  
+		<form id="searchForm" class="form-inline" role="form">
 			<input type="hidden" id="page" name="page"/>
             <input type="hidden" name="totalPages" value="${page.totalPages}">
 	        <input type="hidden" name="currentPage" value="${page.number}">
          <div class="form-group">
-		    <label class="col-sm-2 control-label">姓名</label>
-		    <div class="col-sm-3">
+		    <label class="col-sm-3 control-label">姓名</label>
+		    <div class="col-sm-1">
 				<input name="queryName" type="text" class="form-control">
 		    </div>
 		 </div> 
 		 <div class="form-group">
-		    <label class="col-sm-2 control-label">手机号</label>
-		    <div class="col-sm-3">
+		    <label class="col-sm-3 control-label">手机号</label>
+		    <div class="col-sm-1">
 				<input name="queryMobile" type="text" class="form-control">
 		    </div>
 		 </div>
 		 <div class="form-group">
-		    <label class="col-sm-2 control-label">时间范围</label>
-		    <div class="col-sm-3">
+		    <label class="col-sm-3 control-label">时间范围</label>
+		    <div class="col-sm-1">
+			    <input name="query" type="text" class="form-control">
+			    <input name="query" type="text" class="form-control">
 		    </div>
 		 </div>
 		 
@@ -60,6 +84,7 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 		    </div>
 		 </div> 
     	</form>
+		-->
 		
 		<table class="table table-striped table-hover">
 			<tr class="table-title-blue">
