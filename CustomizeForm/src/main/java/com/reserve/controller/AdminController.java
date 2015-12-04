@@ -157,21 +157,23 @@ public class AdminController extends BaseController{
 	 * @param pageable
 	 * @return
 	 */
-	@RequestMapping(value = "/admin/{page}", method = RequestMethod.GET)
+	@RequestMapping(value = "/admin", method = RequestMethod.GET)
 	public String adminList(
 			ReserveQueryDto reserveQueryDto,
 			Model model,
 			HttpServletRequest request,
 			HttpServletResponse response,
-			@PathVariable("page") Integer page) {
+			@PageableDefault(page=0, size=10, sort="create_time", direction = Sort.Direction.DESC) Pageable pageable) {
 		try { 
 			
-			Map<String, Object> param = createParam(reserveQueryDto,page);
+			Map<String, Object> param = createParam(reserveQueryDto,pageable);
 			List<ReserveRecord> reserveRecords = reserveRecordMapper.selectSelective(param);
 			int total = reserveRecordMapper.countSelectSelective(param);
 			 
-			model.addAttribute("reserveRecords", reserveRecords);
-			model.addAttribute("total", total);
+			Page<?> page = new PageImpl<ReserveRecord>(reserveRecords, pageable, total);
+			model.addAttribute("page", page);
+//			model.addAttribute("reserveRecords", reserveRecords);
+//			model.addAttribute("total", total);
 			model.addAttribute("reserveQueryDto", reserveQueryDto);
 			return "adminList";
 		} catch (Exception e) {
@@ -186,7 +188,7 @@ public class AdminController extends BaseController{
 	 * @param response
 	 * @throws IOException
 	 */
-	@RequestMapping(value = "/admin/export", method = RequestMethod.POST)
+	@RequestMapping(value = "/admin/export", method = RequestMethod.GET)
     public void exportOrderRecords(
     		ReserveQueryDto reserveQueryDto,
     		HttpServletResponse response) throws IOException {
@@ -202,7 +204,7 @@ public class AdminController extends BaseController{
 	 * @param reserveQueryDto
 	 * @return
 	 */
-	private Map<String, Object> createParam(ReserveQueryDto reserveQueryDto, Integer page) {
+	private Map<String, Object> createParam(ReserveQueryDto reserveQueryDto, Pageable pageable) {
 		Map<String, Object> param = new HashMap<String, Object>();
 		if (StringUtils.isNotBlank(reserveQueryDto.getQueryName())) {
 			param.put("name", reserveQueryDto.getQueryName());
@@ -212,9 +214,9 @@ public class AdminController extends BaseController{
 		}
 		param.put("startTime", reserveQueryDto.getQueryStartTime());
 		param.put("endTime", reserveQueryDto.getQueryEndTime());
-		if (page != null) {
-			param.put("offset", page * PAGE_SIZE);
-			param.put("pageSize", PAGE_SIZE);
+		if (pageable != null) {
+			param.put("offset", pageable.getPageNumber() * pageable.getPageSize());
+			param.put("pageSize", pageable.getPageSize());
 		}
 		return param;
 	}

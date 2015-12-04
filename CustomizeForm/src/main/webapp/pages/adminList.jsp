@@ -31,7 +31,10 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 		<h4 class="header">
 			<b>后台查询</b>
 		</h4>
-		<form id="searchForm" class="form-horizontal" role="form" action="admin" method="get">
+		<form id="searchForm" class="form-horizontal" role="form">
+			<input type="hidden" id="page" name="page"/>
+            <input type="hidden" name="totalPages" value="${page.totalPages}">
+	        <input type="hidden" name="currentPage" value="${page.number}">
          <div class="form-group">
 		    <label class="col-sm-2 control-label">姓名</label>
 		    <div class="col-sm-3">
@@ -52,8 +55,8 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 		 
 		 <div class="form-group">
 		    <div class="col-sm-offset-2">
-		    	<button type="submit" class="btn btn-primary btn-primary">查询&nbsp;&nbsp;<i class="glyphicon glyphicon-search"></i></button>
-		    	<button id="export" class="btn btn-primary btn-success">导出excel</button>
+		    	<button type="submit" id="btn-query" class="btn btn-primary btn-primary">查询&nbsp;&nbsp;<i class="glyphicon glyphicon-search"></i></button>
+		    	<button type="submit" id="btn-export" class="btn btn-primary btn-success">导出excel</button>
 		    </div>
 		 </div> 
     	</form>
@@ -67,7 +70,7 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 				<td width="25%">预约时间</td>
 				<td width="15%">身份证照片</td>
 			</tr>
-			<c:forEach var="item" items="${reserveRecords}" varStatus="status">
+			<c:forEach var="item" items="${page.content}" varStatus="status">
 				<tr>
 					<td>${status.index+1}</td>
 					<td>${item.name}</td>
@@ -90,7 +93,6 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 			<div class="col-sm-3"><span id ="statics" style="line-height:60px"></span></div>
 			<div class="col-sm-9"><div id="pagination" style="float:right"></div></div>
 		</div>
-		
 		
 		<!-- Modal -->
 		<div class="modal" id="photoModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -124,23 +126,34 @@ $(function(){
 	
 	var total = $("#total").data("total");
 	//分页，PageCount是总条目数，这是必选参数，其它参数都是可选
-    $('#pagination').pagination(total, {
-        callback: PageCallback, 
+    $('#pagination').pagination($('input[name="totalPages"]').val(), {
+        callback: function (index, jq) {
+            $('#page').val(index);
+            $("#searchForm").attr("action","admin");
+            $("#searchForm").attr("method","GET");
+            $('#searchForm').submit();
+            return false;
+        }, 
+        current_page: $('input[name="currentPage"]').val(),
+        items_per_page: 1,
+        num_display_entries: 4,
+        num_edge_entries: 2,
         prev_text: '<<',
         next_text: '>>',
-        items_per_page:10,
-        num_edge_entries: 2, //两侧首尾分页条目数
-        num_display_entries: 5, //连续分页主体部分分页条目数
-        current_page: 0, //当前页索引
+        load_first_page: false,
+        show_if_single_page: true,
     });
 	
-    function PageCallback(index, jq) {
-    	location.href = '/reserve/admin/' + index;
-    }
 	
-	$('#export').on('click',function(){	
-		location.href = '/reserve/admin/export';
-	})
+	$('#btn-export').on('click',function(){	
+		$("#searchForm").attr("action", "admin/export");
+        $('#searchForm').submit();
+	});
+	
+	$('#btn-query').on('click',function(){	
+		$("#searchForm").attr("action", "admin");
+        $('#searchForm').submit();
+	});
 	
 	$('.view-photo').on('click',function(){
 		var id = $(this).attr('id');
