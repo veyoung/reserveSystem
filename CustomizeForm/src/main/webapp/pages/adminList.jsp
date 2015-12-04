@@ -23,6 +23,10 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 		.require{color:red;}
 		.photo-wrapper{width:200px;height:300px;}
 			#photo{width:560px;height:300px;}
+		
+		td.day,td.day.old{cursor:pointer;}
+		td.day.new,td.day.old{color:#cccccc;}
+		
 </style>
 </head>
 <body>
@@ -39,15 +43,20 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 		    <label>姓名</label>
 		    <input type="text" class="form-control" style="width:80px;">
 		  </div>
+		  
 		  <div class="form-group">
 		    <label>手机号</label>
 		    <input type="text" class="form-control" style="width:120px;">
 		  </div>
+		  
 		  <div class="form-group">
-		  	<label>时间范围</label>
-			<input name="query" type="text" class="form-control">
-			<input name="query" type="text" class="form-control">
-		  </div>  
+		  	  <label>起止日期：</label>
+	          <div class="input-group">
+	              <input type="text" name="queryStartTime" class="form-control queryTime" placeholder="请选择起始日期" data-date-format="yyyy-mm-dd" value="${feedbackQueryDto.queryStartTimeStr}" style="width:150px;"/>
+	              <span class="input-group-addon">-</span>
+	              <input type="text" name="queryEndTime" class="form-control queryTime" placeholder="请选择截止日期" data-date-format="yyyy-mm-dd" value="${feedbackQueryDto.queryEndTimeStr}" style="width:150px;"/>
+	          </div>
+          </div>
 		  <button type="submit" id="btn-query" class="btn btn-primary btn-primary">查询&nbsp;&nbsp;<i class="glyphicon glyphicon-search"></i></button>
 		  <button type="submit" id="btn-export" class="btn btn-primary btn-success">导出excel</button>
 		</form>
@@ -142,12 +151,20 @@ body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Taho
 </div>
 <script src="/reserve/js/jquery-1.9.1.min.js"></script>
 <script src="/reserve/js/bootstrap.min.js"></script>
-<script src="/reserve/js/bootstrap-datepicker.js"></script>
+<script src="/reserve/js/bootstrap-datetimepicker.min.js"></script>
+<script src="/reserve/js/bootstrap-datetimepicker.zh-CN.js"></script>
 <script src="/reserve/js/jquery.pagination.js"></script>
 <script type="text/javascript">
 $(function(){
-	$('#queryStartTime').datepicker();
-	$('#queryEndTime').datepicker();
+	$('.queryTime').datetimepicker({
+		format: 'yyyy-mm-dd',
+        minView: 'month',
+        showButtonPanel: true,
+        autoclose: true,
+        language: 'zh-CN',
+        todayHighlight:true,
+        initialDate: new Date()
+    });
 	
 	var total = $("#total").data("total");
 	//分页，PageCount是总条目数，这是必选参数，其它参数都是可选
