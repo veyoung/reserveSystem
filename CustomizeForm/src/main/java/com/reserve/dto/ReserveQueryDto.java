@@ -1,5 +1,6 @@
 package com.reserve.dto;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class ReserveQueryDto {
@@ -12,6 +13,10 @@ public class ReserveQueryDto {
 	private Date queryStartTime;
 	
 	private Date queryEndTime;
+	
+	private String queryStartTimeStr;
+	
+	private String queryEndTimeStr;
 	
 	public String getQueryName() {
 		return queryName;
@@ -51,5 +56,29 @@ public class ReserveQueryDto {
 	
 	public void setQueryEndTime(Date queryEndTime) {
 		this.queryEndTime = queryEndTime;
+	}
+
+	public String getQueryStartTimeStr() {
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		if (queryStartTime != null) {
+			return format.format(queryStartTime);
+		} else {
+			return "";
+		}
+	}
+
+	public void setQueryStartTimeStr(String queryStartTimeStr) {
+	}
+
+	public String getQueryEndTimeStr() {
+		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+		if (queryEndTime != null) {
+			return format.format(queryEndTime);
+		} else {
+			return "";
+		}
+	}
+
+	public void setQueryEndTimeStr(String queryEndTimeStr) {
 	}
 }

@@ -8,5 +8,8 @@
     
     <definition name="form" template="/pages/form.jsp">
     </definition>
+    
+    <definition name="success" template="/pages/success.jsp">
+    </definition>
 
 </tiles-definitions>

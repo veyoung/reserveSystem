@@ -109,10 +109,10 @@
     from reserve_record
     <where>
     	<if test="startTime != null">
-    		and create_time &gt; #{startTime,jdbcType=TIMESTAMP}
+    		and reserve_time &gt; #{startTime,jdbcType=TIMESTAMP}
     	</if>
     	<if test="endTime != null">
-    		and create_time &lt; #{endTime,jdbcType=TIMESTAMP}
+    		and reserve_time &lt; #{endTime,jdbcType=TIMESTAMP}
     	</if>
     	<if test="name != null">
     		and name = #{name,jdbcType=VARCHAR}
@@ -121,6 +121,7 @@
     		and mobile = #{mobile,jdbcType=VARCHAR}
     	</if>
     </where>
+    order by create_time desc
     <if test="pageSize != null">
 		limit #{offset,jdbcType=INTEGER}, #{pageSize,jdbcType=INTEGER}
 	</if>
@@ -144,4 +145,9 @@
     	</if>
     </where>
   </select>
+  
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long" >
+    delete from reserve_record
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
 </mapper>

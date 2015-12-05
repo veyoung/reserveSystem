@@ -1,7 +1,9 @@
 package com.reserve.controller;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -24,6 +26,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +34,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -42,14 +47,17 @@ import com.reserve.dto.ReserveQueryDto;
 import com.reserve.mapper.ReserveRecordMapper;
 import com.reserve.model.ReserveRecord;
 import com.reserve.util.IdGenerator;
+import com.reserve.util.SendEmailThread;
 
 @Controller
 public class AdminController extends BaseController{
+//	private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
+	
 	@Autowired
 	ReserveRecordMapper reserveRecordMapper;
 	
-	private final int EXPORT_BATCH_SIZE = 1000;
-	private final int PAGE_SIZE = 10;
+//	private final int EXPORT_BATCH_SIZE = 1000;
+//	private final int PAGE_SIZE = 10;
 	
 	@RequestMapping(value = "/go",  method = RequestMethod.GET)
 	@ResponseBody
@@ -70,17 +78,23 @@ public class AdminController extends BaseController{
 	 * @return
 	 */
 	@RequestMapping(value = "/form",  method = RequestMethod.POST)
-	@ResponseBody
-	public Map<String, Object> reserve(
+	public String reserve(
 			@RequestParam(value="name",required = true) String name,
 			@RequestParam(value="mobile",required = true) String mobile,
 			@RequestParam(value="idNumber",required = false) String idNumber,
-			@RequestParam(value="reserveTime",required = true) Date reserveTime,
+			@RequestParam(value="reserveTimeDay",required = true) String reserveTimeDay,
+			@RequestParam(value="reserveTimeHour",required = true) String reserveTimeHour,
+			@RequestParam(value="reserveTimeMinu",required = true) String reserveTimeMinu,
 			@RequestParam(value="description",required = true) String description,
 			@RequestParam(value="file",required = false) MultipartFile file,
+			Model model,
 			HttpServletRequest request,
 			HttpServletResponse response) {
 		try {
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+			String strDate = reserveTimeDay + " " + reserveTimeHour + ":" + reserveTimeMinu;
+			Date reserveTime=sdf.parse(strDate);
+			
 			ReserveRecord record = new ReserveRecord();
 			record.setId(IdGenerator.getInstance().nextId());
 			record.setName(name);
@@ -93,11 +107,21 @@ public class AdminController extends BaseController{
 				record.setIdPhoto(file.getBytes());
 			}
 			reserveRecordMapper.insertSelective(record);
-			//sendMail(record);
-			return success();
+//			logger.error("insert success");
+
+			SendEmailThread thread = new SendEmailThread(record);
+			thread.start();
+			return "success";
 		} catch (Exception e) {
-			e.printStackTrace();
-			return fail();
+			ByteArrayOutputStream buf = new java.io.ByteArrayOutputStream();
+			e.printStackTrace(new java.io.PrintWriter(buf, true));
+			String expMessage = buf.toString();
+			try {
+				buf.close();
+			} catch (Exception e2) {
+			}
+			model.addAttribute("info", expMessage);
+			return "error";
 		}
 	}
 	
@@ -117,6 +141,28 @@ public class AdminController extends BaseController{
 		try {
 			ReserveRecord reserveRecord = reserveRecordMapper.selectByPrimaryKey(id);
 			return success(reserveRecord);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return fail();
+		}
+	}
+	
+	/**
+	 * 删除记录
+	 * @param id
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	@RequestMapping(value = "/record/delete/{id}",  method = RequestMethod.GET)
+	@ResponseBody
+	public Map<String, Object> reserveDeleteById(
+			@PathVariable("id") Long id,
+			HttpServletRequest request,
+			HttpServletResponse response) {
+		try {
+			int result = reserveRecordMapper.deleteByPrimaryKey(id);
+			return success(result);
 		} catch (Exception e) {
 			e.printStackTrace();
 			return fail();
@@ -173,7 +219,7 @@ public class AdminController extends BaseController{
 			Page<?> page = new PageImpl<ReserveRecord>(reserveRecords, pageable, total);
 			model.addAttribute("page", page);
 //			model.addAttribute("reserveRecords", reserveRecords);
-//			model.addAttribute("total", total);
+			model.addAttribute("total", total);
 			model.addAttribute("reserveQueryDto", reserveQueryDto);
 			return "adminList";
 		} catch (Exception e) {
@@ -221,73 +267,7 @@ public class AdminController extends BaseController{
 		return param;
 	}
 	
-	/**
-	 * 发送邮件提醒
-	 * @param record
-	 */
-	public void sendMail(ReserveRecord record) {
-		final Properties props = new Properties();
-        /*
-         * 可用的属性： mail.store.protocol / mail.transport.protocol / mail.host /
-         * mail.user / mail.from
-         */
-        // 表示SMTP发送邮件，需要进行身份验证
-        props.put("mail.smtp.auth", "true");
-        props.put("mail.smtp.host", "smtp.163.com");
-         
-        // 发件人的账号
-        props.put("mail.user", "qrqyy@163.com");
-        // 访问SMTP服务时需要提供的密码
-        props.put("mail.password", "qrqyy20082451");
- 
-        try {
-        	// 构建授权信息，用于进行SMTP进行身份验证
-            Authenticator authenticator = new Authenticator() {
-                @Override
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    // 用户名、密码
-                    String userName = props.getProperty("mail.user");
-                    String password = props.getProperty("mail.password");
-                    return new PasswordAuthentication(userName, password);
-                }
-            };
-             
-            // 使用环境属性和授权信息，创建邮件会话
-            Session mailSession = Session.getInstance(props, authenticator);
-            // 创建邮件消息
-            MimeMessage message = new MimeMessage(mailSession);
-            // 设置发件人
-            InternetAddress form = new InternetAddress(
-                    props.getProperty("mail.user"));
-            message.setFrom(form);
-     
-            // 设置收件人
-            InternetAddress to = new InternetAddress("642479980@qq.com");
-            message.setRecipient(RecipientType.TO, to);
-     
-            // 设置抄送
-            InternetAddress cc = new InternetAddress("760518799@qq.com");
-            message.setRecipient(RecipientType.CC, cc);
-     
-            // 设置邮件标题
-            String title = "姓名:" + record.getName() + "-电话:"+record.getMobile()+"预约提醒";
-            message.setSubject(title);
-     
-            // 设置邮件的内容体
-            String content = "\"刘明亮劳模工作室 预约登记表\"有新数据，请登录后台处理。<br>姓名:"+record.getName()
-            		+ "<br>手机："  + record.getMobile()
-            		+ "<br>身份证号码：" + record.getMobile() 
-            		+ "<br>预约时间：" + record.getReserveTime()
-            		+ "<br>情况说明：" + record.getDescription();
-            message.setContent(content, "text/html;charset=UTF-8");
-            
-            // 发送邮件
-        	Transport.send(message);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
+		
 	/**
 	 * 导出excel
 	 * @return
@@ -307,7 +287,6 @@ public class AdminController extends BaseController{
         
         Map<String, Object> param = createParam(reserveQueryDto,null);
         List<ReserveRecord> reserveRecords = reserveRecordMapper.selectSelective(param);
-		int total = reserveRecordMapper.countSelectSelective(param);
 		int rowIndex = 0;
 		for(int j = 0; j < reserveRecords.size(); j++) {
         	cell = 0;
@@ -323,25 +302,14 @@ public class AdminController extends BaseController{
                 row.createCell(cell++).setCellValue(reserveRecord.getCreateTimeStr());
         	}  
         }
-		
-//        Map<String, Object> param = addParam(dto,  null);
-//        Integer total = orderRecordMapper.countOrdersSelective(param);
-//        int rowIndex = 0;
-//        for(int i = 0; i < (total/ EXPORT_BATCH_SIZE + 1); i++) {//小批量处理，放在内存开销太大
-//            Pageable pageable = new PageRequest(i, EXPORT_BATCH_SIZE, new Sort(Direction.DESC,"createTime"));
-//            Page<OrderRecord> page = getOrderList(dto,  pageable);
-//            List<OrderRecord> orders = page.getContent();
-//            for(int j = 0; j < orders.size(); j++) {
-//            	cell = 0;
-//            	OrderRecord orderRecord = orders.get(j);
-//            	if(orderRecord != null){
-//            		row = sheet.createRow(++rowIndex);
-//                    row.createCell(cell++).setCellValue(rowIndex);
-//                    row.createCell(cell++).setCellValue(orderRecord.getId() != null ? orderRecord.getId().toString() : "");
-//                    row.createCell(cell++).setCellValue(orderRecord.getUserId() == null ? "" : orderRecord.getUserId().toString());
-//                    row.createCell(cell++).setCellValue(orderRecord.getCreateTime() != null ? longFormat.format(orderRecord.getCreateTime()) : "");
-//            	}  
-//            }
         wb.write(out);
+        wb.close();
     }
+	
+	@InitBinder    
+	public void initBinder(WebDataBinder binder) {    
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");    
+        dateFormat.setLenient(false);    
+        binder.registerCustomEditor(Date.class, new CustomDateEditor(dateFormat, true));    
+	}	
 }

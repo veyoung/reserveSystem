@@ -8,52 +8,145 @@
 <link rel="stylesheet" href="css/distributorlist.css"/>
 <style>
 html {-ms-text-size-adjust: 100%;-webkit-text-size-adjust: 100%;}
-body {font-family: 'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Tahoma, Arial, Helvetica, STHeiti;margin: 0;width:100%;height:100%;background-color:#e9e9e9;}
+body {font-family: "Lantinghei SC", "Hiragino Sans GB",'Microsoft Yahei', '微软雅黑', '宋体', \5b8b\4f53, Tahoma, Arial, Helvetica, STHeiti;margin: 0;width:100%;height:100%;}
 
-.wrapper{background: none repeat scroll 0 0 #e9e9e9;}
-	.admin-wrapper{width:960px;margin:0 auto;background-color:#ffffff;}
-		.header{height:50px;background-color:#eeeeee;}
+.wrapper{min-height:100%;height: auto !important;height: 100%;position: relative;}
+	.navi{height:54px;width:100%;border-bottom:2px solid #478DCD;background-image:url(images/header.png);background-repeat:repeat-x;}
+		.navi-content{width:960px;margin:0 auto;}
+	.admin-wrapper{width:960px;margin:0 auto;background-color:#ffffff;height:1000px;}
+		.header{height:50px;background-color:#401ffb;color:white;}
 		.front{margin:0 20px 15px 20px;border-bottom:1px dashed #eee;}
 			.front p{font-size:95%;color: #555;}
+		.form-box{margin:15px 0 10px 0;border:1px solid #478DCD;padding:20px 5px 20px 5px;border-radius:5px;background-color:#EEF1F8;}
+		
 		.require{color:red;}
+		.photo-wrapper{width:200px;height:300px;}
+			#photo{width:560px;height:300px;}
+		
+		td.day,td.day.old{cursor:pointer;}
+		td.day.new,td.day.old{color:#cccccc;}
+		tr.table-content td{font-size:15px;}
+		tr.table-title td{font-weight:bold;color:white;background-color:#2D90D0;}
+		.orange{color:orange;cursor:pointer;}
+		
+	.footer{height:54px;width:100%;border-top:2px solid #478DCD;position:absolute;bottom: 0;background: #6cf;clear:both;}
+		.footer-content{width:960px;margin:0 auto;}
+		
 </style>
 </head>
 <body>
 <div class="wrapper">
+	<div class="navi">
+		<div class="navi-content">
+			<h4>
+				<b style="line-height:40px;">刘明亮劳模工作室——管理中心</b>
+			</h4>
+		</div>
+	</div>
 	<div class="admin-wrapper">
-		<h4 class="header">
-			<b>分销商列表</b>
-			<div class="pull-right action-group">               
-				<button class="btn btn-success" data-toggle="modal" data-target="#myModal">
-  					<i class="ace-icon fa fa-plus-circle"></i>添加分销商
-				</button>                     
-			</div>
-		</h4>
+		<div class="form-box">
+			<form class="form-inline" id="searchForm">
+			  <input type="hidden" id="page" name="page"/>
+			  <input type="hidden" name="totalPages" value="${page.totalPages}">
+			  <input type="hidden" name="currentPage" value="${page.number}">
+			  <input type="hidden" name="total" value="${total}">
+			  <div class="form-group" style="margin-left:10px;">
+				<label>姓名</label>
+				<input type="text" name="queryName" class="form-control" style="width:100px;" placeholder="请输入姓名" value="${reserveQueryDto.queryName}">
+			  </div>
+			  
+			  <div class="form-group" style="margin-left:10px;">
+				<label>手机号</label>
+				<input type="text" name="queryMobile" class="form-control" style="width:120px;"  placeholder="请输入手机号" value="${reserveQueryDto.queryMobile}">
+			  </div>
+			  
+			  <div class="form-group" style="margin-left:10px;margin-right:10px;">
+				  <label>预约日期：</label>
+				  <div class="input-group">
+					  <input type="text" name="queryStartTime" class="form-control queryTime" placeholder="请选择起始日期" data-date-format="yyyy-mm-dd" value="${reserveQueryDto.queryStartTimeStr}" style="width:150px;"/>
+					  <span class="input-group-addon">-</span>
+					  <input type="text" name="queryEndTime" class="form-control queryTime" placeholder="请选择截止日期" data-date-format="yyyy-mm-dd" value="${reserveQueryDto.queryEndTimeStr}" style="width:150px;"/>
+				  </div>
+			  </div>
+			  <button type="submit" id="btn-query" class="btn btn-primary btn-primary">查询&nbsp;&nbsp;<i class="glyphicon glyphicon-search"></i></button>
+			  <button type="submit" id="btn-export" class="btn btn-primary btn-success">导出excel</button>
+			</form>
+		</div>
 		
 		<table class="table table-striped table-hover">
-			<tr class="table-title-blue"><td width="10%" class="distributor-font">分销商姓名</td><td width="15%">ID</td><td width="20%">等级</td><td width="15%">所属会员</td><td width="20%">下属会员</td><td width="20%">操作</td></tr>
-			<tr><td class="distributor-font">&nbsp;余扬</td><td>56235123</td><td>钻石会员</td><td>李斯</td><td><a href="distributorsubmember.html">查看</a></td>
-				<td>
-					<a class="blue" href="distributoredit.html"><i class="ace-icon fa fa-pencil"></i>编辑&nbsp;&nbsp;</a>
-					<a class="orange"><i class="ace-icon fa fa-pencil"></i>删除</a>
-				</td>
+			<tr class="table-title">
+				<td width="5%">序号</td>
+				<td width="8%">姓名</td>
+				<td width="10%">手机号</td>
+				<td width="15%">预约时间</td>
+				<td width="15%">身份证号</td>
+				<td width="10%">身份证照片</td>
+				<td width="10%">操作</td>
 			</tr>
-			<tr><td class="distributor-font">&nbsp;余扬</td><td>56235123</td><td>钻石会员</td><td>李斯</td><td><a href="distributorsubmember.html">查看</a></td>
-				<td>
-					<a class="blue" href="distributoredit.html"><i class="ace-icon fa fa-pencil"></i>编辑&nbsp;&nbsp;</a>
-					<a class="orange"><i class="ace-icon fa fa-pencil"></i>删除</a>
-				</td>
-			</tr>			
+				<tr class="table-content">
+					<td>${status.index+1}</td>
+					<td>${item.name}</td>
+					<td>${item.mobile}</td>
+					<td>${item.reserveTimeStr}</td>
+					<td>
+							未填写
+					</td>
+					<td>
+							未上传
+					</td>
+					<td>
+						<a class="orange"><i class="ace-icon fa fa-trash-o"></i>&nbsp;删除</a>
+					</td>
+				</tr>
 		</table>
-		<div style="float:right">
-			<ul class="pagination">
-	  			<li class="disabled"><a href="#">&laquo;</a></li>
-	  			<li class="active"><a href="#">1 <span class="sr-only">(current)</span></a></li>
-	  			<li><a href="#">2</a></li>
-	  			<li><a href="#">3</a></li>
-	  			<li><a href="#">4</a></li>
-	  			<li><a href="#">&raquo;</a></li>
-			</ul>
+		<span id="total" data-total="${total}"></span>
+		<div style="background-color:#F5F5F5;height:60px;margin-top:-20px">
+			<div class="col-sm-3"><span id ="statics" style="line-height:60px"></span></div>
+			<div class="col-sm-9"><div id="pagination" style="float:right"></div></div>
+		</div>
+		
+		<!-- Modal -->
+		<div class="modal" id="photoModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		  <div class="modal-dialog">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <h4 class="modal-title">身份证照片</h4>
+		      </div>
+		      <div class="modal-body">
+		      	<div class="photo-wrapper">
+		      		<img id="photo"/>
+		      	</div>
+		      </div>
+		      <div class="modal-footer">
+			        <button class="btn btn-primary" data-dismiss="modal">关闭</button>
+			  </div>
+		    </div><!-- /.modal-content -->
+		  </div><!-- /.modal-dialog -->
+		</div>
+		<!-- /.modal --> 
+		
+		<!-- Modal -->
+		<div class="modal" id="photoModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		  <div class="modal-dialog">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <h4 class="modal-title">身份证照片</h4>
+		      </div>
+		      <div class="modal-body">
+		      	<div class="photo-wrapper">
+		      		<img id="photo"/>
+		      	</div>
+		      </div>
+		      <div class="modal-footer">
+			        <button class="btn btn-primary" data-dismiss="modal">关闭</button>
+			  </div>
+		    </div><!-- /.modal-content -->
+		  </div><!-- /.modal-dialog -->
+		</div>
+		<!-- /.modal --> 
+	</div>
+	<div class="footer">
+		<div class="footer-content">
 		</div>
 	</div>
 </div>

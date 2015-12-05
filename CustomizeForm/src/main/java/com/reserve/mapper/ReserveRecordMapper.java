@@ -27,4 +27,6 @@ public interface ReserveRecordMapper {
     List<ReserveRecord> selectSelective(Map<String, Object> param);
     
     int countSelectSelective(Map<String, Object> param);
+    
+    int deleteByPrimaryKey(Long id);
 }
